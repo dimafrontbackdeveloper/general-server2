@@ -302,8 +302,8 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						body: JSON.stringify({
 							msg_type: 'READ_HANDLED_FORK_RECORDS',
 							params: {
-								limit: 3,
-								statuses: ['VALUE_BET'],
+								limit: 5,
+								statuses: ['SUCCESS', 'VALUE_BET'],
 							},
 						}),
 					}
