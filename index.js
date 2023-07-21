@@ -80,7 +80,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 							msg_type: 'READ_HANDLED_FORK_RECORDS',
 							params: {
 								limit: 3,
-								statuses: ['VALUE_BET'],
+								statuses: ['SUCCESS', 'VALUE_BET'],
 							},
 						}),
 					}
