@@ -162,7 +162,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 							msg_type: 'READ_HANDLED_FORK_RECORDS',
 							params: {
 								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
+								statuses: ['VALUE_BET'],
 							},
 						}),
 					}
@@ -206,7 +206,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 							msg_type: 'READ_HANDLED_FORK_RECORDS',
 							params: {
 								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
+								statuses: ['VALUE_BET'],
 							},
 						}),
 					}
@@ -286,7 +286,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 							msg_type: 'READ_HANDLED_FORK_RECORDS',
 							params: {
 								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
+								statuses: ['VALUE_BET'],
 							},
 						}),
 					}
@@ -310,7 +310,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 					countOfFindingNewAccount < accounts.length
 				)
 			}
-
+			// 'SUCCESS',
 			if (logMessage === 'skip') {
 				const handledForksResponce = await fetch(
 					`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
@@ -324,7 +324,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 							msg_type: 'READ_HANDLED_FORK_RECORDS',
 							params: {
 								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
+								statuses: ['VALUE_BET'],
 							},
 						}),
 					}
