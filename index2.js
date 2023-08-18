@@ -50,9 +50,13 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 			activeAccount['warnings/Errors'] = ''
 		}
 
+		let countOfFindingNewAccount = 0
+
 		let valueBets = null
 
 		if (logMessage) {
+			activeAccount.countOfWorkTimes =
+				Number(activeAccount.countOfWorkTimes) + 1
 			await fetch(
 				`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
 				{
@@ -80,7 +84,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 							msg_type: 'READ_HANDLED_FORK_RECORDS',
 							params: {
 								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
+								statuses: ['VALUE_BET'],
 							},
 						}),
 					}
@@ -95,7 +99,11 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+					countOfFindingNewAccount += 1
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) &&
+					countOfFindingNewAccount < accounts.length
+				)
 				const oldAndNewAccountRes = await fetch(
 					`${BASE_URL}?action=replaceAccount`
 				)
@@ -169,7 +177,11 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+					countOfFindingNewAccount += 1
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) &&
+					countOfFindingNewAccount < accounts.length
+				)
 
 				accounts = accounts.map(account => {
 					if (account.botUuid !== activeAccount.botUuid) {
@@ -209,7 +221,11 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+					countOfFindingNewAccount += 1
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) &&
+					countOfFindingNewAccount < accounts.length
+				)
 				// await fetch(`${BASE_URL}?action=limit`)
 
 				const body = {
@@ -287,7 +303,12 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+					console.log('cqqqqqqqqqqqqqqqqqqqqq')
+					countOfFindingNewAccount += 1
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) &&
+					countOfFindingNewAccount < accounts.length
+				)
 			}
 
 			if (logMessage === 'skip') {
@@ -318,8 +339,17 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+					countOfFindingNewAccount += 1
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) &&
+					countOfFindingNewAccount < accounts.length
+				)
 			}
+		}
+		console.log('countOfFindingNewAccount')
+		console.log(countOfFindingNewAccount)
+		if (countOfFindingNewAccount >= accounts.length) {
+			return 'Или остался один акк, или все акки с isNeedToCheck: true'
 		}
 
 		console.log('valueBets')
