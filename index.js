@@ -2,8 +2,6 @@ import express from 'express'
 // import { uk21 } from './settings.js'
 import { uk21 } from './settings.js'
 
-// check is really need to skip bot
-
 const variants = [
 	'http://localhost:5000',
 	'https://general-server.vercel.app',
@@ -34,13 +32,7 @@ const checkIsNeedToReplaceIndexOfActiveAccountToZero = (
 const app = express()
 app.use(express.json())
 
-async function main({
-	token,
-	sheetBaseUrl,
-	bk,
-	logMessage = '',
-	startNextBotAfterTime = null,
-}) {
+async function main(token, sheetBaseUrl, bk, logMessage = '') {
 	try {
 		const BASE_URL = sheetBaseUrl
 
@@ -368,46 +360,40 @@ async function main({
 			}
 		}
 
-		await setTimeout(
-			async () => {
-				// start bot
-				await fetch(
-					`https://alg-fox.net/api/v1/bot-client/connected/${newOrOldActiveAccount.botUuid}/`,
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							authorization: `bearer ${token}`,
-						},
-						body: JSON.stringify({
-							msg_type: 'START_BOT',
-							params: {},
-						}),
-					}
-				)
-				// push new accounts to the sheet
-				const newAccounts = accounts.map((account, i) => {
-					if (i !== newOrOldIndexActiveAccount) {
-						account['isActive'] = 'false'
-						return account
-					} else if (i === newOrOldIndexActiveAccount) {
-						account['isActive'] = 'true'
-
-						return account
-					}
-				})
-
-				await fetch(`${BASE_URL}?action=updateSheetRows`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({ newAccounts }),
-				})
-			},
-			startNextBotAfterTime ? startNextBotAfterTime * 1000 : 0
+		// start bot
+		await fetch(
+			`https://alg-fox.net/api/v1/bot-client/connected/${newOrOldActiveAccount.botUuid}/`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					authorization: `bearer ${token}`,
+				},
+				body: JSON.stringify({
+					msg_type: 'START_BOT',
+					params: {},
+				}),
+			}
 		)
+		// push new accounts to the sheet
+		const newAccounts = accounts.map((account, i) => {
+			if (i !== newOrOldIndexActiveAccount) {
+				account['isActive'] = 'false'
+				return account
+			} else if (i === newOrOldIndexActiveAccount) {
+				account['isActive'] = 'true'
 
+				return account
+			}
+		})
+
+		await fetch(`${BASE_URL}?action=updateSheetRows`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ newAccounts }),
+		})
 		console.log('finish')
 
 		return 'success'
@@ -420,20 +406,8 @@ app.get('/account', async (req, res) => {
 	const token = req.query.token
 	const sheetBaseUrl = req.query.sheetBaseUrl
 	const bk = req.query.bk
-	const startNextBotAfterTime = req.query.startNextBotAfterTime
-	const startNextBotIfDontHaveBetsTime =
-		req.query.startNextBotIfDontHaveBetsTime
 
-	const payload = {
-		token: req.query.token,
-		sheetBaseUrl: req.query.sheetBaseUrl,
-		bk: req.query.bk,
-		logMessage: req.query.logMessage || '',
-		startNextBotAfterTime: req.query.startNextBotAfterTime,
-		startNextBotIfDontHaveBetsTime: req.query.startNextBotIfDontHaveBetsTime,
-	}
-
-	main(payload).then(data => {
+	main(token, sheetBaseUrl, bk, req.query?.logMessage || '').then(data => {
 		res.json({
 			data,
 		})
@@ -548,17 +522,6 @@ app.post('/settings', async (req, res) => {
 
 	res.json({
 		data: 'success',
-	})
-})
-
-app.get('/startNextBotIfDontHaveBetsTime', async (req, res) => {
-	const resp = await fetch(
-		`${req.query.sheetBaseUrl}?action=getStartNextBotIfDontHaveBetsTime`
-	)
-	const data = await resp.json()
-	console.log(data)
-	res.json({
-		data: data.data,
 	})
 })
 
