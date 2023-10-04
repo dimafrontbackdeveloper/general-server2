@@ -53,6 +53,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 		let valueBets = null
 
 		if (logMessage) {
+			console.log('before pause')
 			await fetch(
 				`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
 				{
@@ -67,6 +68,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 					}),
 				}
 			)
+			console.log('after pause')
 			if (logMessage === 'restrict') {
 				const handledForksResponce = await fetch(
 					`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
@@ -95,7 +97,10 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
+					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+				)
 				const oldAndNewAccountRes = await fetch(
 					`${BASE_URL}?action=replaceAccount`
 				)
@@ -169,13 +174,16 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
+					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+				)
 
 				accounts = accounts.map(account => {
 					if (account.botUuid !== activeAccount.botUuid) {
 						return account
 					} else {
-						activeAccount['isNeedToCheck'] = 'true'
+						activeAccount['isBalanceLessFlat'] = 'true'
 						return activeAccount
 					}
 				})
@@ -209,7 +217,10 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
+					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+				)
 				// await fetch(`${BASE_URL}?action=limit`)
 
 				const body = {
@@ -287,10 +298,14 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
+					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+				)
 			}
 
 			if (logMessage === 'skip') {
+				console.log('before skip')
 				const handledForksResponce = await fetch(
 					`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
 					{
@@ -308,6 +323,7 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						}),
 					}
 				)
+				console.log('after skip')
 
 				const handledForksData = await handledForksResponce.json()
 
@@ -318,7 +334,10 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
-				} while (eval(accounts[indexOfActiveAccount].isNeedToCheck))
+				} while (
+					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
+					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+				)
 			}
 		}
 
@@ -431,11 +450,23 @@ app.get('/isHasActiveAccount', async (req, res) => {
 	}
 })
 
+app.get('/accounts', async (req, res) => {
+	const accountsResponce = await fetch(
+		`${req.query.sheetBaseUrl}?action=getSheetRows`
+	)
+	const accounts = await accountsResponce.json()
+
+	res.json({
+		data: accounts,
+	})
+})
+
 app.post('/balances', async (req, res) => {
 	const accounts = req.body.accounts
+	console.log(accounts)
 	const bk = req.body.bk
 	const token = req.body.token
-
+	console.log(`bk: ${bk}`)
 	const balances = []
 
 	async function getBalance(account) {
@@ -461,12 +492,7 @@ app.post('/balances', async (req, res) => {
 
 		return balance
 	}
-	console.log('cyclic pidor')
-	console.log('cyclic pidor')
-	console.log('cyclic pidor')
-	console.log('cyclic pidor')
-	console.log('cyclic pidor')
-	console.log('cyclic pidor')
+
 	async function fetchBalances() {
 		for (const account of accounts) {
 			const balance = await getBalance(account)

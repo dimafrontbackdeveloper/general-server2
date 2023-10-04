@@ -54,36 +54,20 @@ const postBets = async () => {
 
 const app = async () => {
 	try {
-		const handledForksResponce = await fetch(
-			`https://alg-fox.net/api/v1/bot-client/connected/71c06935977244febfaaa938d92dcce8:Y2:7fb17b9b67a242f1be6314163d8a2531/`,
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					authorization: `bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjkwMTExNjIsInByb2plY3RfbmFtZSI6ImNvbnRyb2wiLCJ1c2VyX2lkIjoiNGQyZWUwMDUtYTk0Zi00ZTZmLThjODAtNjkyMmZlMWI1ZTExIiwicCI6MX0.Mj-7Ypmpyk-n9K6XIZ31yNGR_k3Yp1lcYpjnF0GkOVY`,
-				},
-				body: JSON.stringify({
-					msg_type: 'READ_HANDLED_FORK_RECORDS',
-					params: {
-						limit: 2,
-						statuses: ['SUCCESS', 'VALUE_BET'],
-					},
-				}),
-			}
-		)
-		const handledForksData = await handledForksResponce.json()
-		let valueBets = handledForksData.handledForkList
-		console.log(valueBets)
+		const token =
+			'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjkwMTExNjIsInByb2plY3RfbmFtZSI6ImNvbnRyb2wiLCJ1c2VyX2lkIjoiNGQyZWUwMDUtYTk0Zi00ZTZmLThjODAtNjkyMmZlMWI1ZTExIiwicCI6MX0.Mj-7Ypmpyk-n9K6XIZ31yNGR_k3Yp1lcYpjnF0GkOVY'
+		const sheetBaseUrl =
+			'https://script.google.com/macros/s/AKfycbz4qmLhX1NTUdT_IuWd_y3rK5gh-NKo1B1F0Z80M6a6xOxwYCrCQQZ6M3aCtIPmFh34/exec'
 
 		const res = await fetch(
-			`http://localhost:5000/account?logMessage=success bet&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjkwMTExNjIsInByb2plY3RfbmFtZSI6ImNvbnRyb2wiLCJ1c2VyX2lkIjoiNGQyZWUwMDUtYTk0Zi00ZTZmLThjODAtNjkyMmZlMWI1ZTExIiwicCI6MX0.Mj-7Ypmpyk-n9K6XIZ31yNGR_k3Yp1lcYpjnF0GkOVY&sheetBaseUrl=https://script.google.com/macros/s/AKfycbxyOj2alkPaapqJX1HZ1w0upE3TYrRMT9YZswpJlfIapOlWrSqoo5FAyTSZDM-NAsohKQ/exec&bk=stake`,
+			`http://localhost:5000/account?logMessage=balanceLessThenZero&token=${token}&sheetBaseUrl=${sheetBaseUrl}`,
 			{
 				method: 'GET',
 			}
 		)
 
 		const data = await res.json()
-		console.log(data)
+		console.log(JSON.stringify(data))
 	} catch (error) {
 		console.log(error)
 	}
