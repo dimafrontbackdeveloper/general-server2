@@ -52,6 +52,9 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 
 		let valueBets = null
 
+		let oldIndexOfActiveAccount = indexOfActiveAccount
+		let isNeedToStartNextBot = true
+
 		if (logMessage) {
 			console.log('before pause')
 			await fetch(
@@ -97,9 +100,13 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
+					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
+						isNeedToStartNextBot = false
+					}
 				} while (
 					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
+						oldIndexOfActiveAccount !== indexOfActiveAccount)
 				)
 				const oldAndNewAccountRes = await fetch(
 					`${BASE_URL}?action=replaceAccount`
@@ -174,9 +181,13 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
+					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
+						isNeedToStartNextBot = false
+					}
 				} while (
 					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
+						oldIndexOfActiveAccount !== indexOfActiveAccount)
 				)
 
 				accounts = accounts.map(account => {
@@ -217,9 +228,13 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
+					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
+						isNeedToStartNextBot = false
+					}
 				} while (
 					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
+						oldIndexOfActiveAccount !== indexOfActiveAccount)
 				)
 				// await fetch(`${BASE_URL}?action=limit`)
 
@@ -292,15 +307,20 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 				console.log('handledForksData')
 
 				valueBets = handledForksData.handledForkList
+
 				do {
 					indexOfActiveAccount += 1
 					indexOfActiveAccount = checkIsNeedToReplaceIndexOfActiveAccountToZero(
 						indexOfActiveAccount,
 						accounts
 					)
+					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
+						isNeedToStartNextBot = false
+					}
 				} while (
 					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
+						oldIndexOfActiveAccount !== indexOfActiveAccount)
 				)
 			}
 
@@ -334,9 +354,13 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 						indexOfActiveAccount,
 						accounts
 					)
+					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
+						isNeedToStartNextBot = false
+					}
 				} while (
 					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					eval(accounts[indexOfActiveAccount].isBalanceLessFlat)
+					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
+						oldIndexOfActiveAccount !== indexOfActiveAccount)
 				)
 			}
 		}
@@ -379,21 +403,24 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 			}
 		}
 
-		// start bot
-		await fetch(
-			`https://alg-fox.net/api/v1/bot-client/connected/${newOrOldActiveAccount.botUuid}/`,
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					authorization: `bearer ${token}`,
-				},
-				body: JSON.stringify({
-					msg_type: 'START_BOT',
-					params: {},
-				}),
-			}
-		)
+		if (isNeedToStartNextBot) {
+			// start bot
+			await fetch(
+				`https://alg-fox.net/api/v1/bot-client/connected/${newOrOldActiveAccount.botUuid}/`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						authorization: `bearer ${token}`,
+					},
+					body: JSON.stringify({
+						msg_type: 'START_BOT',
+						params: {},
+					}),
+				}
+			)
+		}
+
 		// push new accounts to the sheet
 		const newAccounts = accounts.map((account, i) => {
 			if (i !== newOrOldIndexActiveAccount) {
