@@ -511,6 +511,18 @@ app.post('/balances', async (req, res) => {
 	res.json(balances)
 })
 
+app.put('/isBalanceLessFlat', async (req, res) => {
+	await fetch(`${req.body.sheetBaseUrl}?action=updateSheetRows`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			newAccounts: req.body.accounts,
+		}),
+	})
+})
+
 app.post('/settings', async (req, res) => {
 	const token = req.body.token
 	const bk = req.body.bk
