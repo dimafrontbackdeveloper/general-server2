@@ -59,12 +59,24 @@ const app = async () => {
 		const sheetBaseUrl =
 			'https://script.google.com/macros/s/AKfycbz4qmLhX1NTUdT_IuWd_y3rK5gh-NKo1B1F0Z80M6a6xOxwYCrCQQZ6M3aCtIPmFh34/exec'
 
-		const res = await fetch(
-			`http://localhost:5000/account?logMessage=success bet&token=${token}&sheetBaseUrl=${sheetBaseUrl}`,
-			{
-				method: 'GET',
-			}
+		const accountsResponce = await fetch(
+			`http://localhost:5000/accounts?sheetBaseUrl=${sheetBaseUrl}`
 		)
+		const accountsData = await accountsResponce.json()
+		const accounts = accountsData.data.accounts
+
+		const res = await fetch(`http://localhost:5000/startNextBot`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				token,
+				sheetBaseUrl,
+				logMessage: 'success bet',
+				bk: 'bet365',
+			}),
+		})
 
 		const data = await res.json()
 		console.log(JSON.stringify(data))

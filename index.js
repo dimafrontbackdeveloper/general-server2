@@ -2,12 +2,6 @@ import express from 'express'
 // import { uk21 } from './settings.js'
 import { uk21 } from './settings.js'
 
-const variants = [
-	'http://localhost:5000',
-	'https://general-server.vercel.app',
-	'https://sleepy-teal-snaps.cyclic.app',
-]
-
 const findIndexOfActiveAccount = accounts => {
 	let indexOfActiveAccount = accounts.findIndex(
 		account => account.isActive === 'true'
@@ -32,13 +26,10 @@ const checkIsNeedToReplaceIndexOfActiveAccountToZero = (
 const app = express()
 app.use(express.json())
 
-async function main(token, sheetBaseUrl, bk, logMessage = '') {
+async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 	try {
 		const BASE_URL = sheetBaseUrl
 
-		const res = await fetch(`${BASE_URL}?action=getSheetRows`)
-		let { accounts } = await res.json()
-		console.log(accounts)
 		console.log('start')
 
 		let indexOfActiveAccount = findIndexOfActiveAccount(accounts)
@@ -448,12 +439,13 @@ async function main(token, sheetBaseUrl, bk, logMessage = '') {
 	}
 }
 
-app.get('/account', async (req, res) => {
-	const token = req.query.token
-	const sheetBaseUrl = req.query.sheetBaseUrl
-	const bk = req.query.bk
+app.post('/startNextBot', async (req, res) => {
+	const token = req.body.token
+	const sheetBaseUrl = req.body.sheetBaseUrl
+	const bk = req.body.bk
+	const logMessage = req.body.logMessage
 
-	main(token, sheetBaseUrl, bk, req.query?.logMessage || '').then(data => {
+	startNextBot(token, sheetBaseUrl, bk, logMessage).then(data => {
 		res.json({
 			data,
 		})
