@@ -221,12 +221,7 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 		console.log('valueBets')
 		console.log(valueBets)
 
-		let newOrOldIndexActiveAccount =
-			checkIsNeedToReplaceIndexOfActiveAccountToZero(
-				indexOfActiveAccount,
-				accounts
-			)
-		const newOrOldActiveAccount = accounts[newOrOldIndexActiveAccount]
+		const newOrOldActiveAccount = accounts[indexOfActiveAccount]
 		console.log('newOrOldActiveAccount')
 		console.log(newOrOldActiveAccount)
 
@@ -256,28 +251,30 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 			}
 		}
 
-		// start bot
-		await fetch(
-			`https://alg-fox.net/api/v1/bot-client/connected/${newOrOldActiveAccount.botUuid}/`,
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					authorization: `bearer ${token}`,
-				},
-				body: JSON.stringify({
-					msg_type: 'START_BOT',
-					params: {},
-				}),
-			}
-		)
+		if (isNeedToStartNextBot) {
+			// start bot
+			await fetch(
+				`https://alg-fox.net/api/v1/bot-client/connected/${newOrOldActiveAccount.botUuid}/`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						authorization: `bearer ${token}`,
+					},
+					body: JSON.stringify({
+						msg_type: 'START_BOT',
+						params: {},
+					}),
+				}
+			)
+		}
 
 		// push new accounts to the sheet
 		const newAccounts = accounts.map((account, i) => {
-			if (i !== newOrOldIndexActiveAccount) {
+			if (i !== indexOfActiveAccount) {
 				account['isActive'] = 'false'
 				return account
-			} else if (i === newOrOldIndexActiveAccount) {
+			} else if (i === indexOfActiveAccount) {
 				account['isActive'] = 'true'
 
 				return account
