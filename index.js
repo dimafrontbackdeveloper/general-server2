@@ -23,6 +23,13 @@ const checkIsNeedToReplaceIndexOfActiveAccountToZero = (
 	}
 }
 
+const getAccounts = async sheetBaseUrl => {
+	const accountsResponce = await fetch(`${sheetBaseUrl}?action=getSheetRows`)
+	const accounts = await accountsResponce.json()
+
+	return accounts
+}
+
 const app = express()
 app.use(express.json())
 
@@ -101,7 +108,6 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 					}),
 				}
 			)
-			console.log('after skip')
 
 			const handledForksData = await handledForksResponce.json()
 			valueBets = handledForksData.handledForkList
@@ -309,7 +315,7 @@ app.post('/startNextBot', async (req, res) => {
 	})
 })
 
-app.get('/isHasActiveAccount', async (req, res) => {
+app.get('/activeAccount', async (req, res) => {
 	const sheetBaseUrl = req.query.sheetBaseUrl
 	const sheetRes = await fetch(`${sheetBaseUrl}?action=getActiveAccount`)
 	const activeAccount = await sheetRes.json()
@@ -327,25 +333,22 @@ app.get('/isHasActiveAccount', async (req, res) => {
 })
 
 app.get('/accounts', async (req, res) => {
-	const accountsResponce = await fetch(
-		`${req.query.sheetBaseUrl}?action=getSheetRows`
-	)
-	const accounts = await accountsResponce.json()
+	const accounts = await getAccounts(req.query.sheetBaseUrl)
 
 	res.json({
 		data: accounts,
 	})
 })
 
-app.post('/balances', async (req, res) => {
-	const accounts = req.body.accounts
+app.get('/balances', async (req, res) => {
+	const sheetBaseUrl = req.query.sheetBaseUrl
+	const { accounts } = await getAccounts(sheetBaseUrl)
 	console.log(accounts)
-	const bk = req.body.bk
-	const token = req.body.token
+	const bk = req.query.bk
+	const token = req.query.token
 	console.log(`bk: ${bk}`)
-	const balances = []
 
-	async function getBalance(account) {
+	async function getBalanceOfOneAccount(account) {
 		const balanceRes = await fetch(
 			`https://alg-fox.net/api/v1/bot-client/connected/${account.botUuid}/`,
 			{
@@ -369,9 +372,11 @@ app.post('/balances', async (req, res) => {
 		return balance
 	}
 
-	async function fetchBalances() {
+	async function getBalanceOfEveryoneAccount(accounts) {
+		const balances = []
+
 		for (const account of accounts) {
-			const balance = await getBalance(account)
+			const balance = await getBalanceOfOneAccount(account)
 
 			if (balance.detail) {
 				balances.push(`something wrong: ${balance.detail}`)
@@ -383,11 +388,11 @@ app.post('/balances', async (req, res) => {
 		return balances
 	}
 
-	await fetchBalances()
+	const balances = await getBalanceOfEveryoneAccount(accounts)
 	res.json(balances)
 })
 
-app.put('/isBalanceLessFlat', async (req, res) => {
+app.put('/accounts', async (req, res) => {
 	await fetch(`${req.body.sheetBaseUrl}?action=updateSheetRows`, {
 		method: 'POST',
 		headers: {
