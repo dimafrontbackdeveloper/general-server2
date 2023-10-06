@@ -73,7 +73,7 @@ const app = async () => {
 			body: JSON.stringify({
 				token,
 				sheetBaseUrl,
-				logMessage: 'success bet',
+				logMessage: 'balanceLessThenZero',
 				bk: 'bet365',
 			}),
 		})

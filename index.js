@@ -30,10 +30,14 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 	try {
 		const BASE_URL = sheetBaseUrl
 
+		// get accounts
+		const res = await fetch(`${BASE_URL}?action=getSheetRows`)
+		let { accounts } = await res.json()
+		console.log(accounts)
 		console.log('start')
 
-		let indexOfActiveAccount = findIndexOfActiveAccount(accounts)
-		const activeAccount = accounts[indexOfActiveAccount]
+		let indexOfActiveAccount = findIndexOfActiveAccount(accounts) // index of account with field 'isActive' true in sheet
+		const activeAccount = accounts[indexOfActiveAccount] // active account
 		console.log('activeAccount')
 		console.log(activeAccount)
 
@@ -46,9 +50,41 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 		let oldIndexOfActiveAccount = indexOfActiveAccount
 		let isNeedToStartNextBot = true
 
+		do {
+			indexOfActiveAccount += 1
+			indexOfActiveAccount = checkIsNeedToReplaceIndexOfActiveAccountToZero(
+				indexOfActiveAccount,
+				accounts
+			)
+			if (oldIndexOfActiveAccount === indexOfActiveAccount) {
+				isNeedToStartNextBot = false
+			}
+		} while (
+			eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
+			(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
+				oldIndexOfActiveAccount !== indexOfActiveAccount)
+		)
+
+		console.log('before pause')
+		await fetch(
+			`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					authorization: `bearer ${token}`,
+				},
+				body: JSON.stringify({
+					msg_type: 'PAUSE_BOT',
+					params: {},
+				}),
+			}
+		)
+		console.log('after pause')
+
 		if (logMessage) {
-			console.log('before pause')
-			await fetch(
+			// get bets of current bot
+			const handledForksResponce = await fetch(
 				`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
 				{
 					method: 'POST',
@@ -57,48 +93,20 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 						authorization: `bearer ${token}`,
 					},
 					body: JSON.stringify({
-						msg_type: 'PAUSE_BOT',
-						params: {},
+						msg_type: 'READ_HANDLED_FORK_RECORDS',
+						params: {
+							limit: 5,
+							statuses: ['SUCCESS', 'VALUE_BET'],
+						},
 					}),
 				}
 			)
-			console.log('after pause')
+			console.log('after skip')
+
+			const handledForksData = await handledForksResponce.json()
+			valueBets = handledForksData.handledForkList
+
 			if (logMessage === 'restrict') {
-				const handledForksResponce = await fetch(
-					`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							authorization: `bearer ${token}`,
-						},
-						body: JSON.stringify({
-							msg_type: 'READ_HANDLED_FORK_RECORDS',
-							params: {
-								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
-							},
-						}),
-					}
-				)
-
-				const handledForksData = await handledForksResponce.json()
-
-				valueBets = handledForksData.handledForkList
-				do {
-					indexOfActiveAccount += 1
-					indexOfActiveAccount = checkIsNeedToReplaceIndexOfActiveAccountToZero(
-						indexOfActiveAccount,
-						accounts
-					)
-					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
-						isNeedToStartNextBot = false
-					}
-				} while (
-					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
-						oldIndexOfActiveAccount !== indexOfActiveAccount)
-				)
 				const oldAndNewAccountRes = await fetch(
 					`${BASE_URL}?action=replaceAccount`
 				)
@@ -145,42 +153,6 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 			}
 
 			if (logMessage === 'balanceLessThenZero') {
-				const handledForksResponce = await fetch(
-					`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							authorization: `bearer ${token}`,
-						},
-						body: JSON.stringify({
-							msg_type: 'READ_HANDLED_FORK_RECORDS',
-							params: {
-								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
-							},
-						}),
-					}
-				)
-
-				const handledForksData = await handledForksResponce.json()
-
-				valueBets = handledForksData.handledForkList
-				do {
-					indexOfActiveAccount += 1
-					indexOfActiveAccount = checkIsNeedToReplaceIndexOfActiveAccountToZero(
-						indexOfActiveAccount,
-						accounts
-					)
-					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
-						isNeedToStartNextBot = false
-					}
-				} while (
-					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
-						oldIndexOfActiveAccount !== indexOfActiveAccount)
-				)
-
 				accounts = accounts.map(account => {
 					if (account.botUuid !== activeAccount.botUuid) {
 						return account
@@ -192,41 +164,6 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 			}
 
 			if (logMessage === 'limit') {
-				const handledForksResponce = await fetch(
-					`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							authorization: `bearer ${token}`,
-						},
-						body: JSON.stringify({
-							msg_type: 'READ_HANDLED_FORK_RECORDS',
-							params: {
-								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
-							},
-						}),
-					}
-				)
-
-				const handledForksData = await handledForksResponce.json()
-
-				valueBets = handledForksData.handledForkList
-				do {
-					indexOfActiveAccount += 1
-					indexOfActiveAccount = checkIsNeedToReplaceIndexOfActiveAccountToZero(
-						indexOfActiveAccount,
-						accounts
-					)
-					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
-						isNeedToStartNextBot = false
-					}
-				} while (
-					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
-						oldIndexOfActiveAccount !== indexOfActiveAccount)
-				)
 				// await fetch(`${BASE_URL}?action=limit`)
 
 				const body = {
@@ -273,86 +210,11 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 			}
 
 			if (logMessage === 'success bet') {
-				console.log('success bet eee')
-
-				const handledForksResponce = await fetch(
-					`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							authorization: `bearer ${token}`,
-						},
-						body: JSON.stringify({
-							msg_type: 'READ_HANDLED_FORK_RECORDS',
-							params: {
-								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
-							},
-						}),
-					}
-				)
-				console.log('handledForksResponce')
-
-				const handledForksData = await handledForksResponce.json()
-				console.log('handledForksData')
-
-				valueBets = handledForksData.handledForkList
-
-				do {
-					indexOfActiveAccount += 1
-					indexOfActiveAccount = checkIsNeedToReplaceIndexOfActiveAccountToZero(
-						indexOfActiveAccount,
-						accounts
-					)
-					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
-						isNeedToStartNextBot = false
-					}
-				} while (
-					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
-						oldIndexOfActiveAccount !== indexOfActiveAccount)
-				)
+				console.log('success bet')
 			}
 
 			if (logMessage === 'skip') {
-				console.log('before skip')
-				const handledForksResponce = await fetch(
-					`https://alg-fox.net/api/v1/bot-client/connected/${activeAccount.botUuid}/`,
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							authorization: `bearer ${token}`,
-						},
-						body: JSON.stringify({
-							msg_type: 'READ_HANDLED_FORK_RECORDS',
-							params: {
-								limit: 5,
-								statuses: ['SUCCESS', 'VALUE_BET'],
-							},
-						}),
-					}
-				)
-				console.log('after skip')
-
-				const handledForksData = await handledForksResponce.json()
-
-				valueBets = handledForksData.handledForkList
-				do {
-					indexOfActiveAccount += 1
-					indexOfActiveAccount = checkIsNeedToReplaceIndexOfActiveAccountToZero(
-						indexOfActiveAccount,
-						accounts
-					)
-					if (oldIndexOfActiveAccount === indexOfActiveAccount) {
-						isNeedToStartNextBot = false
-					}
-				} while (
-					eval(accounts[indexOfActiveAccount].isNeedToCheck) ||
-					(eval(accounts[indexOfActiveAccount].isBalanceLessFlat) &&
-						oldIndexOfActiveAccount !== indexOfActiveAccount)
-				)
+				console.log('skip')
 			}
 		}
 
@@ -394,23 +256,21 @@ async function startNextBot(token, sheetBaseUrl, bk, logMessage = '') {
 			}
 		}
 
-		if (isNeedToStartNextBot) {
-			// start bot
-			await fetch(
-				`https://alg-fox.net/api/v1/bot-client/connected/${newOrOldActiveAccount.botUuid}/`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						authorization: `bearer ${token}`,
-					},
-					body: JSON.stringify({
-						msg_type: 'START_BOT',
-						params: {},
-					}),
-				}
-			)
-		}
+		// start bot
+		await fetch(
+			`https://alg-fox.net/api/v1/bot-client/connected/${newOrOldActiveAccount.botUuid}/`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					authorization: `bearer ${token}`,
+				},
+				body: JSON.stringify({
+					msg_type: 'START_BOT',
+					params: {},
+				}),
+			}
+		)
 
 		// push new accounts to the sheet
 		const newAccounts = accounts.map((account, i) => {
